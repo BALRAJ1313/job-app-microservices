@@ -1,0 +1,107 @@
+version: "3.9"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    restart: always
+    environment:
+      MYSQL_USER: balraj
+      MYSQL_PASSWORD: balraj
+      MYSQL_ROOT_PASSWORD: balraj
+    ports:
+      - "3306:3306"
+    networks:
+      - mysql-network
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+  config-server-ms:
+    image: balraj1313/config-server-ms:latest
+    container_name: config-server-ms
+    ports:
+      - "8083:8083"
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - mysql-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  servicereg:
+    image: balraj1313/servicereg:latest
+    container_name: servicereg
+    ports:
+      - "8761:8761"
+    depends_on:
+      - mysql
+    networks:
+      - microservice-network
+      - mysql-network
+
+  jobms:
+    image: balraj1313/jobms:latest
+    container_name: job
+    ports:
+      - "8080:8080"
+    depends_on:
+      - servicereg
+      - config-server-ms
+      - companyms
+      - reviewms
+    networks:
+      - microservice-network
+      - mysql-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  companyms:
+    image: balraj1313/companyms:latest
+    container_name: company
+    ports:
+      - "8081:8081"
+    depends_on:
+      - servicereg
+      - config-server-ms
+    networks:
+      - microservice-network
+      - mysql-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  reviewms:
+    image: balraj1313/reviewms:latest
+    container_name: review
+    ports:
+      - "8082:8082"
+    depends_on:
+      - servicereg
+      - config-server-ms
+    networks:
+      - microservice-network
+      - mysql-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  gateway-ms:
+    image: balraj1313/gateway-ms:latest
+    container_name: gateway
+    ports:
+      - "8084:8084"
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - mysql-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+volumes:
+  mysql_data:
+
+networks:
+  microservice-network:
+    driver: bridge
+  mysql-network:
+    driver: bridge

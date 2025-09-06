@@ -1,0 +1,25 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# Logs
+*.log
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Maven/Gradle
+target/
+build/
+
+# OS Files
+.DS_Store
+Thumbs.db
