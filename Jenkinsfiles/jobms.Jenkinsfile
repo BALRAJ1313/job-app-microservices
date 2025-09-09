@@ -38,6 +38,16 @@ pipeline {
             }
         }
 
+                stage('Load into Minikube') {
+                    steps {
+                        // pull the image locally and load it into Minikube VM
+                        bat "docker pull %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%"
+                        bat "minikube image load %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%"
+                    }
+                }
+
+
+
         stage('Deploy to Kubernetes') {
             steps {
                 bat "kubectl set image deployment/job job=%DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG% --record"
