@@ -1,0 +1,267 @@
+                +-------------------+
+                |   Control Plane   |
+                |-------------------|
+                |  kube-apiserver   |
+                |  etcd (DB)        |
+                |  scheduler        |
+                |  controllers      |
+                +---------+---------+
+                          |
+        -----------------------------------------
+        |                                       |
++-------------------+                 +-------------------+
+|   Worker Node 1   |                 |   Worker Node 2   |
+|-------------------|                 |-------------------|
+|  kubelet          |                 |  kubelet          |
+|  kube-proxy       |                 |  kube-proxy       |
+|  container runtime|                 |  container runtime|
+|-------------------|                 |-------------------|
+|   Pod(s):         |                 |   Pod(s):         |
+|   - app1          |                 |   - app2          |
+|   - app3          |                 |   - app4          |
++-------------------+                 +-------------------+
+
+   ... more worker nodes possible
+
+
+*************************************************************************************************
+
+
++-------------------------------------------------------+
+|                   Minikube VM / Docker                |
+|-------------------------------------------------------|
+|                Control Plane Components               |
+|   - kube-apiserver                                    |
+|   - etcd                                              |
+|   - scheduler                                         |
+|   - controller-manager                                |
+|-------------------------------------------------------|
+|                Worker Node Components                 |
+|   - kubelet                                           |
+|   - kube-proxy                                        |
+|   - container runtime (Docker / containerd)           |
+|-------------------------------------------------------|
+|                  Pods (your apps)                     |
+|   - service-registry                                  |
+|   - config-server                                     |
+|   - companyms                                         |
+|   - reviewms                                          |
+|   ... etc.                                            |
++-------------------------------------------------------+
+
+
+
+***************************************************************************************************************************
+
+                        ┌────────────────────────────┐
+                        │   You (Developer Laptop)   │
+                        │                            │
+   docker build/push --->│   docker push myrepo/...  │
+                        │                            │
+      kubectl apply ---->│   kubectl apply -f deploy │
+                        └─────────────┬──────────────┘
+                                      │
+                                      v
+                      ┌────────────────────────────────┐
+                      │   Kubernetes Control Plane      │
+                      │  (Master Node in Cluster)       │
+                      │                                │
+        +-------------+-------------+                  │
+        | kube-apiserver            |  <─── kubectl calls (REST API)
+        +-------------+-------------+                  │
+                      │                                │
+          +-----------+-----------+                    │
+          |                       |                    │
+   +------+-----+        +--------+--------+           │
+   | etcd (DB)  |        | Controller-     |           │
+   | Cluster    |        | Manager         |           │
+   +------------+        +-----------------+           │
+                      Schedules Pods                 │
+                      +----------------+              │
+                      | kube-scheduler |              │
+                      +----------------+              │
+                      └────────────────────────────────┘
+                                      │
+                                      │ (Assign Pod to Worker Node)
+                                      v
+         ┌──────────────────────────────────────────────────────────┐
+         │                   Worker Nodes (N1..Nn)                  │
+         │                                                          │
+   ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+   │ Worker Node │       │ Worker Node │       │ Worker Node │
+   │     #1      │       │     #2      │       │     #3      │
+   │             │       │             │       │             │
+   │ +---------+ │       │ +---------+ │       │ +---------+ │
+   │ | kubelet | │       │ | kubelet | │       │ | kubelet | │
+   │ +----+----+ │       │ +----+----+ │       │ +----+----+ │
+   │      │      │       │      │      │       │      │      │
+   │ +----v----+ │       │ +----v----+ │       │ +----v----+ │
+   │ |container| │       │ |container| │       │ |container| │
+   │ | runtime | │       │ | runtime | │       │ | runtime | │
+   │ +----+----+ │       │ +----+----+ │       │ +----+----+ │
+   │      │      │       │      │      │       │      │      │
+   │ +----v----+ │       │ +----v----+ │       │ +----v----+ │
+   │ | Pods:   | │       │ | Pods:   | │       │ | Pods:   | │
+   │ | company | │       │ | job     | │       │ | review  | │
+   │ | review  | │       │ | gateway | │       │ | mysql   | │
+   │ +---------+ │       │ +---------+ │       │ +---------+ │
+   │             │       │             │       │             │
+   │ +---------+ │       │ +---------+ │       │ +---------+ │
+   │ |kube-proxy| │      │ |kube-proxy| │      │ |kube-proxy| │
+   │ +---------+ │       │ +---------+ │      │ +---------+ │
+   └─────────────┘       └─────────────┘       └─────────────┘
+
+
+
+***************************************************************************************************************************
+
+1. Outside the Cluster
+
+kubectl (CLI)
+
+Installed on your laptop.
+
+Talks to the Kubernetes cluster via kube-apiserver.
+
+Uses kubeconfig for authentication and cluster info.
+
+Container Registry (Docker Hub, etc.)
+
+Stores your built Docker images.
+
+Kubernetes pulls images from here when creating Pods.
+
+*****************************************************************
+2. Cluster Level
+
+Kubernetes Cluster
+
+A cluster = Control Plane + Worker Nodes.
+
+In Minikube (with Docker driver), both run inside a single Docker container.
+
+*****************************************************************
+
+3. Control Plane Components (brains of Kubernetes)
+
+kube-apiserver
+
+The “front door” of the cluster.
+
+Receives all kubectl and internal requests.
+
+Exposes REST API for all cluster operations.
+
+Validates and persists objects in etcd.
+
+etcd
+
+Distributed key-value store.
+
+Stores all cluster state (Pods, Deployments, Services, ConfigMaps, etc).
+
+Think of it as Kubernetes’ “database”.
+
+kube-scheduler
+
+Watches for new Pods without a Node assignment.
+
+Decides which Node should run each Pod (based on resources, affinity, taints, etc).
+
+kube-controller-manager
+
+Runs many “controller loops” that watch desired state vs actual state.
+
+Examples:
+
+Deployment controller → ensures correct number of Pods.
+
+Node controller → monitors Node health.
+
+Job controller, ReplicaSet controller, etc.
+
+*****************************************************************
+
+4. Worker Node Components (muscles of Kubernetes)
+
+kubelet
+
+Agent running on every Node.
+
+Talks to kube-apiserver.
+
+Ensures Pods defined for this Node are running.
+
+Talks to container runtime (containerd) to start/stop containers.
+
+kube-proxy
+
+Manages networking on each Node.
+
+Implements Service load balancing (cluster IPs).
+
+Configures iptables or IPVS rules to route traffic to Pods.
+
+Container Runtime (containerd, CRI-O, etc)
+
+Actually pulls images and runs containers.
+
+Docker used to be here, but now Kubernetes uses containerd under the hood.
+
+*****************************************************************
+
+5. Workloads & Objects
+
+Pod
+
+Smallest deployable unit in Kubernetes.
+
+Wraps one or more containers + storage + network IP.
+
+Ephemeral (can be recreated anytime).
+
+ReplicaSet
+
+Ensures a given number of Pod replicas are running.
+
+Deployment
+
+Higher-level object that manages ReplicaSets.
+
+Provides rolling updates and rollbacks.
+
+Service
+
+Stable network abstraction to access Pods.
+
+Types:
+
+ClusterIP (default) → accessible only inside cluster.
+
+NodePort → exposes service on each Node’s IP:Port.
+
+LoadBalancer → integrates with cloud LB.
+
+Ingress
+
+Manages HTTP/HTTPS routing.
+
+Acts like a reverse proxy to route traffic into Services.
+
+ConfigMap / Secret
+
+Externalize configuration and sensitive data for Pods.
+
+*****************************************************************
+
+6. Inside Minikube (your setup with Docker driver)
+
+Minikube = 1 Docker container acting as Node.
+
+Inside Minikube:
+
+Control Plane components (apiserver, etcd, scheduler, controller-manager).
+
+Worker components (kubelet, kube-proxy, containerd).
+
+Your Pods (companyms, jobms, reviewms, gateway, mysql).

@@ -1,0 +1,89 @@
+./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=dcode007/jobappimage
+./mvnw spring-boot:build-image "-Dspring-boot.build-image.imageName=balraj1313/jobappimage"
+
+
+docker push jobappimage:latest
+
+docker tag jobappimage:latest dcodex/jobappimage:latest
+
+
+
+docker tag dcodex/jobappimage:latest balraj1313/jobappimage:latest
+
+
+
+./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=balraj1313/jobappimage \
+-Dspring-boot.build-image.builder=paketobuildpacks/builder-noble-java-tiny
+
+
+
+.\mvnw spring-boot:build-image "-Dspring-boot.build-image.imageName=balraj1313/jobappimage" "-Dspring-boot.build-image.builder=paketobuildpacks/builder-noble-java-tiny"
+
+
+# Build the image
+docker build -t balraj1313/jobappimage:latest .
+
+# Login to Docker Hub
+docker login
+
+# Push the image
+docker push balraj1313/jobappimage:latest
+
+docker run -d --name jobappcontainer -p 8080:8080 balraj1313/jobappimage:latest
+docker stop jobappcontainer
+docker rm jobappcontainer
+
+wsl -d docker-desktop ip addr show eth0
+
+
+docker exec -it jobapp-mysql mysql -u jobuser -p
+# enter password: jobpass
+SHOW DATABASES;
+
+
+Do you want me to also adjust your docker-compose.yml so it builds and runs your Spring Boot app along with MySQL in one shot?
+
+
+
+docker build -t balraj1313/servicereg:latest .
+docker run -d --name servicereg -p 8761:8761 balraj1313/servicereg:latest
+
+docker build -t balraj1313/config-server-ms:latest .
+docker run -d --name config-server-ms -p 8083:8083 balraj1313/config-server-ms:latest
+
+docker build -t balraj1313/jobms:latest .
+docker run -d --name job -p 8080:8080 balraj1313/jobms:latest
+
+docker build -t balraj1313/companyms:latest .
+docker run -d --name company -p 8080:8080 balraj1313/companyms:latest
+
+docker build -t balraj1313/gateway-ms:latest .
+docker run -d --name gateway -p 8080:8080 balraj1313/gateway-ms:latest
+
+docker build -t balraj1313/reviewms:latest .
+docker run -d --name gateway -p 8080:8080 balraj1313/reviewms:latest
+
+docker push balraj1313/jobms:latest
+docker push balraj1313/companyms:latest
+docker push balraj1313/reviewms:latest
+
+
+
+
+kubectl create configmap mysql-initdb-config --from-file=init.sql --dry-run=client -o yaml | kubectl apply -f -
+kubectl exec -it mysql-0 -- mysql -u balraj -p
+
+kubectl delete statefulset mysql
+kubectl delete pvc mysql-data-mysql-0
+kubectl apply -f statefulset.yaml
+kubectl describe configmap mysql-initdb-config
+
+
+kubectl rollout restart deployment job
+kubectl rollout status deployment job
+kubectl logs -f deployment/job
+
+kubectl describe pod job | grep -i image
+
+
+
