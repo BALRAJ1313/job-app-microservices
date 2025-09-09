@@ -1,6 +1,9 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'JDK17'               // the name you gave in Jenkins
+    }
     environment {
         MAVEN_HOME = tool 'Maven 3.9.6'
         DOCKERHUB_USER = 'balraj1313'
