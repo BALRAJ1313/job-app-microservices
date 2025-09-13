@@ -1,9 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JDK17'               // the name you gave in Jenkins
-    }
     environment {
         MAVEN_HOME = tool 'Maven 3.9.6'
         DOCKERHUB_USER = 'balraj1313'
@@ -37,15 +34,6 @@ pipeline {
                 }
             }
         }
-
-                stage('Load into Minikube') {
-                    steps {
-                        // pull the image locally and load it into Minikube VM
-                        bat "docker pull %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%"
-                        bat "minikube image load %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%"
-                    }
-                }
-
 
 
         stage('Deploy to Kubernetes') {
